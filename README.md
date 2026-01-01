@@ -23,6 +23,8 @@ This MCP server enables your local AI agents (Claude Code, Cursor, etc.) to inte
 - ⌨️ **Human-like Typing**: Natural typing speed and behavior to avoid detection
 - 🔐 **Authentication**: Automatic Google login with saved session state
 - 🎯 **Conversation Context**: Keep track of ongoing conversations
+- 🎨 **Gemini Tools**: Access Deep Research, Video Creation (Veo 3.1), and Image Generation
+- 🧠 **Model Selection**: Switch between Fast (Gemini 3), Thinking, and Pro models
 
 ---
 
@@ -77,13 +79,89 @@ That's it! Your agent now communicates directly with Gemini.
 
 ## Available Tools
 
-- `ask_question` - Ask Gemini a question
-- `setup_auth` - Set up Google authentication
+### Core Chat Tools
+- `ask_question` - Ask Gemini a question in any conversation
+- `select_model` - Switch between Gemini models (fast, thinking, pro)
+- `use_gemini_tool` - Use specialized Gemini tools (deep_research, create_video, create_image)
+
+### Authentication
+- `setup_auth` - Set up Google authentication (one-time)
 - `re_auth` - Re-authenticate with a different account
+
+### Session Management
 - `list_sessions` - List active conversation sessions
 - `close_session` - Close a specific session
 - `reset_session` - Reset conversation history
-- `get_health` - Check server health
+
+### System
+- `get_health` - Check server health and authentication status
+
+### Conversation Library (Optional)
+- `add_conversation` - Add a conversation URL to your library
+- `list_conversations` - List saved conversations
+- `select_conversation` - Set the active conversation
+- `search_conversations` - Search your conversation library
+
+---
+
+## Usage Examples
+
+### Switching Models
+
+Switch between different Gemini models based on your needs:
+
+```
+"Switch to Gemini Fast model for quick answers"
+# → Uses select_model with model: "fast"
+
+"Use the Thinking model for this complex problem"
+# → Uses select_model with model: "thinking"
+
+"Switch to Pro model for advanced reasoning"
+# → Uses select_model with model: "pro"
+```
+
+**Available Models:**
+- `fast` - Gemini 3: Quick answers for simple questions
+- `thinking` - Deeper reasoning for complex problems
+- `pro` - Advanced math and code with extended thinking
+
+### Using Gemini Tools
+
+Access specialized Gemini capabilities:
+
+#### Deep Research
+```
+"Use Gemini's deep research to investigate quantum computing developments in 2025"
+# → Uses use_gemini_tool with tool: "deep_research"
+```
+
+Deep Research provides:
+- Multi-source synthesis
+- Fact-checking
+- Comprehensive topic overviews
+
+#### Video Generation (Veo 3.1)
+```
+"Create a video showing a sunset over mountains"
+# → Uses use_gemini_tool with tool: "create_video"
+```
+
+Video creation features:
+- Text-to-video generation
+- Scene descriptions
+- Motion and camera controls
+
+#### Image Generation
+```
+"Generate an image of a futuristic city at night"
+# → Uses use_gemini_tool with tool: "create_image"
+```
+
+Image generation features:
+- Text-to-image generation
+- Artistic styles
+- Photo-realistic outputs
 
 ---
 
