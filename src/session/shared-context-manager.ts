@@ -204,7 +204,7 @@ export class SharedContextManager {
       if (strategy === "single" || !isSingleton) {
         // hard fail
         if (isSingleton && strategy === "single") {
-          log.error("❌ Chrome profile already in use and strategy=single. Close other instance or set NOTEBOOK_PROFILE_STRATEGY=auto/isolated.");
+          log.error("❌ Chrome profile already in use and strategy=single. Close other instance or set CONVERSATION_PROFILE_STRATEGY=auto/isolated.");
         }
         throw e;
       }

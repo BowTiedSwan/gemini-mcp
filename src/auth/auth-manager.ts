@@ -1,5 +1,5 @@
 /**
- * Authentication Manager for NotebookLM
+ * Authentication Manager for Gemini App
  *
  * Handles:
  * - Interactive login (headful browser for setup)
@@ -16,7 +16,7 @@ import type { BrowserContext, Page } from "patchright";
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import { CONFIG, NOTEBOOKLM_AUTH_URL } from "../config.js";
+import { CONFIG, GEMINI_AUTH_URL } from "../config.js";
 import { log } from "../utils/logger.js";
 import {
   humanType,
@@ -36,7 +36,7 @@ const CRITICAL_COOKIE_NAMES = [
   "APISID",
   "SAPISID", // API auth
   "OSID",
-  "__Secure-OSID", // NotebookLM-specific
+  "__Secure-OSID", // Gemini App-specific
   "__Secure-1PSID",
   "__Secure-3PSID", // Secure variants
 ];
@@ -280,20 +280,20 @@ export class AuthManager {
    * Perform interactive login
    * User will see a browser window and login manually
    *
-   * SIMPLE & RELIABLE: Just wait for URL to change to notebooklm.google.com
+   * SIMPLE & RELIABLE: Just wait for URL to change to gemini.google.com/app
    */
   async performLogin(page: Page, sendProgress?: ProgressCallback): Promise<boolean> {
     try {
       log.info("🌐 Opening Google login page...");
       log.warning("📝 Please login to your Google account");
-      log.warning("⏳ Browser will close automatically once you reach NotebookLM");
+      log.warning("⏳ Browser will close automatically once you reach Gemini App");
       log.info("");
 
       // Progress: Navigating
       await sendProgress?.("Navigating to Google login...", 3, 10);
 
-      // Navigate to Google login (redirects to NotebookLM after auth)
-      await page.goto(NOTEBOOKLM_AUTH_URL, { timeout: 60000 });
+      // Navigate to Google login (redirects to Gemini App after auth)
+      await page.goto(GEMINI_AUTH_URL, { timeout: 60000 });
 
       // Progress: Waiting for login
       await sendProgress?.("Waiting for manual login (up to 10 minutes)...", 4, 10);
@@ -321,10 +321,10 @@ export class AuthManager {
             );
           }
 
-          // ✅ SIMPLE: Check if we're on NotebookLM (any path!)
-          if (currentUrl.startsWith("https://notebooklm.google.com/")) {
-            await sendProgress?.("Login successful! NotebookLM detected!", 9, 10);
-            log.success("✅ Login successful! NotebookLM URL detected.");
+          // ✅ SIMPLE: Check if we're on Gemini App (any path!)
+          if (currentUrl.startsWith("https://gemini.google.com/app/")) {
+            await sendProgress?.("Login successful! Gemini App detected!", 9, 10);
+            log.success("✅ Login successful! Gemini App URL detected.");
             log.success(`✅ Current URL: ${currentUrl}`);
 
             // Short wait to ensure page is loaded
@@ -346,7 +346,7 @@ export class AuthManager {
 
       // Timeout reached - final check
       const currentUrl = page.url();
-      if (currentUrl.startsWith("https://notebooklm.google.com/")) {
+      if (currentUrl.startsWith("https://gemini.google.com/app/")) {
         await sendProgress?.("Login successful (detected on timeout check)!", 9, 10);
         log.success("✅ Login successful (detected on timeout check)");
         return true;
@@ -387,7 +387,7 @@ export class AuthManager {
     log.info(`  🌐 Navigating to Google login...`);
 
     try {
-      await page.goto(NOTEBOOKLM_AUTH_URL, {
+      await page.goto(GEMINI_AUTH_URL, {
         waitUntil: "domcontentloaded",
         timeout: CONFIG.browserTimeout,
       });
@@ -399,9 +399,9 @@ export class AuthManager {
     const deadline = Date.now() + CONFIG.autoLoginTimeoutMs;
     log.info(`  ⏰ Auto-login timeout: ${CONFIG.autoLoginTimeoutMs / 1000}s`);
 
-    // Already on NotebookLM?
+    // Already on Gemini App?
     log.info("  🔍 Checking if already authenticated...");
-    if (await this.waitForNotebook(page, CONFIG.autoLoginTimeoutMs)) {
+    if (await this.waitForConversation(page, CONFIG.autoLoginTimeoutMs)) {
       log.success("✅ Already authenticated");
       await this.saveBrowserState(context, page);
       return true;
@@ -413,7 +413,7 @@ export class AuthManager {
     log.info("  🔍 Checking for account chooser...");
     if (await this.handleAccountChooser(page, email)) {
       log.success("  ✅ Account selected from chooser");
-      if (await this.waitForNotebook(page, CONFIG.autoLoginTimeoutMs)) {
+      if (await this.waitForConversation(page, CONFIG.autoLoginTimeoutMs)) {
         log.success("✅ Automatic login successful");
         await this.saveBrowserState(context, page);
         return true;
@@ -423,7 +423,7 @@ export class AuthManager {
     // Email step
     log.info("  📧 Entering email address...");
     if (!(await this.fillIdentifier(page, email))) {
-      if (await this.waitForNotebook(page, CONFIG.autoLoginTimeoutMs)) {
+      if (await this.waitForConversation(page, CONFIG.autoLoginTimeoutMs)) {
         log.success("✅ Automatic login successful");
         await this.saveBrowserState(context, page);
         return true;
@@ -456,7 +456,7 @@ export class AuthManager {
     }
 
     // Wait for Google redirect after login
-    log.info("  🔄 Waiting for Google redirect to NotebookLM...");
+    log.info("  🔄 Waiting for Google redirect to Gemini App...");
 
     if (await this.waitForRedirectAfterLogin(page, deadline)) {
       log.success("✅ Automatic login successful");
@@ -498,8 +498,8 @@ export class AuthManager {
       } else {
         log.error(`  ❌ Stuck on Google accounts page: ${currentUrl.slice(0, 80)}...`);
       }
-    } else if (currentUrl.includes("notebooklm.google.com")) {
-      log.warning("  ⚠️  Reached NotebookLM but couldn't detect successful login");
+    } else if (currentUrl.includes("gemini.google.com/app")) {
+      log.warning("  ⚠️  Reached Gemini App but couldn't detect successful login");
       log.info("  💡 This might be a timing issue - try again");
     } else {
       log.error(`  ❌ Unexpected page: ${currentUrl.slice(0, 80)}...`);
@@ -513,24 +513,24 @@ export class AuthManager {
   // ============================================================================
 
   /**
-   * Wait for Google to redirect to NotebookLM after successful login (SIMPLE & RELIABLE)
+   * Wait for Google to redirect to Gemini App after successful login (SIMPLE & RELIABLE)
    *
-   * Just checks if URL changes to notebooklm.google.com - no complex UI element searching!
+   * Just checks if URL changes to gemini.google.com/app - no complex UI element searching!
    * Matches the simplified approach used in performLogin().
    */
   private async waitForRedirectAfterLogin(
     page: Page,
     deadline: number
   ): Promise<boolean> {
-    log.info("    ⏳ Waiting for redirect to NotebookLM...");
+    log.info("    ⏳ Waiting for redirect to Gemini App...");
 
     while (Date.now() < deadline) {
       try {
         const currentUrl = page.url();
 
-        // Simple check: Are we on NotebookLM?
-        if (currentUrl.startsWith("https://notebooklm.google.com/")) {
-          log.success("    ✅ NotebookLM URL detected!");
+        // Simple check: Are we on Gemini App?
+        if (currentUrl.startsWith("https://gemini.google.com/app/")) {
+          log.success("    ✅ Gemini App URL detected!");
           // Short wait to ensure page is loaded
           await page.waitForTimeout(2000);
           return true;
@@ -542,26 +542,26 @@ export class AuthManager {
       await page.waitForTimeout(500);
     }
 
-    log.error("    ❌ Redirect timeout - NotebookLM URL not reached");
+    log.error("    ❌ Redirect timeout - Gemini App URL not reached");
     return false;
   }
 
   /**
-   * Wait for NotebookLM to load (SIMPLE & RELIABLE)
+   * Wait for Gemini App to load (SIMPLE & RELIABLE)
    *
-   * Just checks if URL starts with notebooklm.google.com - no complex UI element searching!
+   * Just checks if URL starts with gemini.google.com/app - no complex UI element searching!
    * Matches the simplified approach used in performLogin().
    */
-  private async waitForNotebook(page: Page, timeoutMs: number): Promise<boolean> {
+  private async waitForConversation(page: Page, timeoutMs: number): Promise<boolean> {
     const endTime = Date.now() + timeoutMs;
 
     while (Date.now() < endTime) {
       try {
         const currentUrl = page.url();
 
-        // Simple check: Are we on NotebookLM?
-        if (currentUrl.startsWith("https://notebooklm.google.com/")) {
-          log.success("  ✅ NotebookLM URL detected");
+        // Simple check: Are we on Gemini App?
+        if (currentUrl.startsWith("https://gemini.google.com/app/")) {
+          log.success("  ✅ Gemini App URL detected");
           return true;
         }
       } catch {

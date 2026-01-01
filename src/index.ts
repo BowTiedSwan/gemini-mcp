@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * NotebookLM MCP Server
+ * Gemini MCP Server
  *
- * MCP Server for Google NotebookLM - Chat with Gemini 2.5 through NotebookLM
+ * MCP Server for Google Gemini - Chat with Gemini 2.5 through Gemini
  * with session support and human-like behavior!
  *
  * Features:
@@ -15,11 +15,11 @@
  * - Claude Code integration via npx
  *
  * Usage:
- *   npx notebooklm-mcp
+ *   npx gemini-mcp
  *   node dist/index.js
  *
  * Environment Variables:
- *   NOTEBOOK_URL - Default NotebookLM notebook URL
+ *   CONVERSATION_URL - Default Gemini conversation URL
  *   AUTO_LOGIN_ENABLED - Enable automatic login (true/false)
  *   LOGIN_EMAIL - Google email for auto-login
  *   LOGIN_PASSWORD - Google password for auto-login
@@ -27,7 +27,7 @@
  *   MAX_SESSIONS - Maximum concurrent sessions (default: 10)
  *   SESSION_TIMEOUT - Session timeout in seconds (default: 900)
  *
- * Based on the Python NotebookLM API implementation
+ * Based on the Python Gemini API implementation
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -40,7 +40,7 @@ import {
 
 import { AuthManager } from "./auth/auth-manager.js";
 import { SessionManager } from "./session/session-manager.js";
-import { NotebookLibrary } from "./library/notebook-library.js";
+import { ConversationLibrary } from "./library/conversation-library.js";
 import { ToolHandlers, buildToolDefinitions } from "./tools/index.js";
 import { ResourceHandlers } from "./resources/resource-handlers.js";
 import { SettingsManager } from "./utils/settings-manager.js";
@@ -51,11 +51,11 @@ import { log } from "./utils/logger.js";
 /**
  * Main MCP Server Class
  */
-class NotebookLMMCPServer {
+class GeminiMCPServer {
   private server: Server;
   private authManager: AuthManager;
   private sessionManager: SessionManager;
-  private library: NotebookLibrary;
+  private library: ConversationLibrary;
   private toolHandlers: ToolHandlers;
   private resourceHandlers: ResourceHandlers;
   private settingsManager: SettingsManager;
@@ -65,7 +65,7 @@ class NotebookLMMCPServer {
     // Initialize MCP Server
     this.server = new Server(
       {
-        name: "notebooklm-mcp",
+        name: "gemini-mcp",
         version: "1.1.0",
       },
       {
@@ -83,7 +83,7 @@ class NotebookLMMCPServer {
     // Initialize managers
     this.authManager = new AuthManager();
     this.sessionManager = new SessionManager(this.authManager);
-    this.library = new NotebookLibrary();
+    this.library = new ConversationLibrary();
     this.settingsManager = new SettingsManager();
     
     // Initialize handlers
@@ -103,7 +103,7 @@ class NotebookLMMCPServer {
     this.setupShutdownHandlers();
 
     const activeSettings = this.settingsManager.getEffectiveSettings();
-    log.info("🚀 NotebookLM MCP Server initialized");
+    log.info("🚀 Gemini MCP Server initialized");
     log.info(`  Version: 1.1.0`);
     log.info(`  Node: ${process.version}`);
     log.info(`  Platform: ${process.platform}`);
@@ -160,16 +160,16 @@ class NotebookLMMCPServer {
               args as {
                 question: string;
                 session_id?: string;
-                notebook_id?: string;
-                notebook_url?: string;
+                conversation_id?: string;
+                gemini_url?: string;
                 show_browser?: boolean;
               },
               sendProgress
             );
             break;
 
-          case "add_notebook":
-            result = await this.toolHandlers.handleAddNotebook(
+          case "add_conversation":
+            result = await this.toolHandlers.handleAddConversation(
               args as {
                 url: string;
                 name: string;
@@ -182,24 +182,24 @@ class NotebookLMMCPServer {
             );
             break;
 
-          case "list_notebooks":
-            result = await this.toolHandlers.handleListNotebooks();
+          case "list_conversations":
+            result = await this.toolHandlers.handleListConversations();
             break;
 
-          case "get_notebook":
-            result = await this.toolHandlers.handleGetNotebook(
+          case "get_conversation":
+            result = await this.toolHandlers.handleGetConversation(
               args as { id: string }
             );
             break;
 
-          case "select_notebook":
-            result = await this.toolHandlers.handleSelectNotebook(
+          case "select_conversation":
+            result = await this.toolHandlers.handleSelectConversation(
               args as { id: string }
             );
             break;
 
-          case "update_notebook":
-            result = await this.toolHandlers.handleUpdateNotebook(
+          case "update_conversation":
+            result = await this.toolHandlers.handleUpdateConversation(
               args as {
                 id: string;
                 name?: string;
@@ -213,14 +213,14 @@ class NotebookLMMCPServer {
             );
             break;
 
-          case "remove_notebook":
-            result = await this.toolHandlers.handleRemoveNotebook(
+          case "remove_conversation":
+            result = await this.toolHandlers.handleRemoveConversation(
               args as { id: string }
             );
             break;
 
-          case "search_notebooks":
-            result = await this.toolHandlers.handleSearchNotebooks(
+          case "search_conversations":
+            result = await this.toolHandlers.handleSearchConversations(
               args as { query: string }
             );
             break;
@@ -374,7 +374,7 @@ class NotebookLMMCPServer {
    * Start the MCP server
    */
   async start(): Promise<void> {
-    log.info("🎯 Starting NotebookLM MCP Server...");
+    log.info("🎯 Starting Gemini MCP Server...");
     log.info("");
     log.info("📝 Configuration:");
     log.info(`  Config Dir: ${CONFIG.configDir}`);
@@ -421,15 +421,15 @@ async function main() {
   // Print banner
   console.error("╔══════════════════════════════════════════════════════════╗");
   console.error("║                                                          ║");
-  console.error("║           NotebookLM MCP Server v1.0.0                   ║");
+  console.error("║           Gemini MCP Server v1.0.0                   ║");
   console.error("║                                                          ║");
-  console.error("║   Chat with Gemini 2.5 through NotebookLM via MCP       ║");
+  console.error("║   Chat with Gemini 2.5 through Gemini via MCP       ║");
   console.error("║                                                          ║");
   console.error("╚══════════════════════════════════════════════════════════╝");
   console.error("");
 
   try {
-    const server = new NotebookLMMCPServer();
+    const server = new GeminiMCPServer();
     await server.start();
   } catch (error) {
     log.error(`💥 Fatal error starting server: ${error}`);

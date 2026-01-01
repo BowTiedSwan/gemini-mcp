@@ -5,16 +5,16 @@ import {
   CompleteRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { NotebookLibrary } from "../library/notebook-library.js";
+import { ConversationLibrary } from "../library/conversation-library.js";
 import { log } from "../utils/logger.js";
 
 /**
  * Handlers for MCP Resource-related requests
  */
 export class ResourceHandlers {
-  private library: NotebookLibrary;
+  private library: ConversationLibrary;
 
-  constructor(library: NotebookLibrary) {
+  constructor(library: ConversationLibrary) {
     this.library = library;
   }
 
@@ -26,43 +26,43 @@ export class ResourceHandlers {
     server.setRequestHandler(ListResourcesRequestSchema, async () => {
       log.info("📚 [MCP] list_resources request received");
 
-      const notebooks = this.library.listNotebooks();
+      const conversations = this.library.listConversations();
       const resources: any[] = [
         {
-          uri: "notebooklm://library",
-          name: "Notebook Library",
+          uri: "conversationlm://library",
+          name: "Conversation Library",
           description:
-            "Complete notebook library with all available knowledge sources. " +
-            "Read this to discover what notebooks are available. " +
-            "⚠️ If you think a notebook might help with the user's task, " +
+            "Complete conversation library with all available knowledge sources. " +
+            "Read this to discover what conversations are available. " +
+            "⚠️ If you think a conversation might help with the user's task, " +
             "ASK THE USER FOR PERMISSION before consulting it: " +
-            "'Should I consult the [notebook] for this task?'",
+            "'Should I consult the [conversation] for this task?'",
           mimeType: "application/json",
         },
       ];
 
-      // Add individual notebook resources
-      for (const notebook of notebooks) {
+      // Add individual conversation resources
+      for (const conversation of conversations) {
         resources.push({
-          uri: `notebooklm://library/${notebook.id}`,
-          name: notebook.name,
+          uri: `conversationlm://library/${conversation.id}`,
+          name: conversation.name,
           description:
-            `${notebook.description} | Topics: ${notebook.topics.join(", ")} | ` +
-            `💡 Use ask_question to query this notebook (ask user permission first if task isn't explicitly about these topics)`,
+            `${conversation.description} | Topics: ${conversation.topics.join(", ")} | ` +
+            `💡 Use ask_question to query this conversation (ask user permission first if task isn't explicitly about these topics)`,
           mimeType: "application/json",
         });
       }
 
       // Add legacy metadata resource for backwards compatibility
-      const active = this.library.getActiveNotebook();
+      const active = this.library.getActiveConversation();
       if (active) {
         resources.push({
-          uri: "notebooklm://metadata",
-          name: "Active Notebook Metadata (Legacy)",
+          uri: "conversationlm://metadata",
+          name: "Active Conversation Metadata (Legacy)",
           description:
-            "Information about the currently active notebook. " +
-            "DEPRECATED: Use notebooklm://library instead for multi-notebook support. " +
-            "⚠️ Always ask user permission before using notebooks for tasks they didn't explicitly mention.",
+            "Information about the currently active conversation. " +
+            "DEPRECATED: Use conversationlm://library instead for multi-conversation support. " +
+            "⚠️ Always ask user permission before using conversations for tasks they didn't explicitly mention.",
           mimeType: "application/json",
         });
       }
@@ -77,12 +77,12 @@ export class ResourceHandlers {
       return {
         resourceTemplates: [
           {
-            uriTemplate: "notebooklm://library/{id}",
-            name: "Notebook by ID",
+            uriTemplate: "conversationlm://library/{id}",
+            name: "Conversation by ID",
             description:
-              "Access a specific notebook from your library by ID. " +
-              "Provides detailed metadata about the notebook including topics, use cases, and usage statistics. " +
-              "💡 Use the 'id' parameter from list_notebooks to access specific notebooks.",
+              "Access a specific conversation from your library by ID. " +
+              "Provides detailed metadata about the conversation including topics, use cases, and usage statistics. " +
+              "💡 Use the 'id' parameter from list_conversations to access specific conversations.",
             mimeType: "application/json",
           },
         ],
@@ -95,13 +95,13 @@ export class ResourceHandlers {
       log.info(`📖 [MCP] read_resource request: ${uri}`);
 
       // Handle library resource
-      if (uri === "notebooklm://library") {
-        const notebooks = this.library.listNotebooks();
+      if (uri === "conversationlm://library") {
+        const conversations = this.library.listConversations();
         const stats = this.library.getStats();
-        const active = this.library.getActiveNotebook();
+        const active = this.library.getActiveConversation();
 
         const libraryData = {
-          active_notebook: active
+          active_conversation: active
             ? {
                 id: active.id,
                 name: active.name,
@@ -109,7 +109,7 @@ export class ResourceHandlers {
                 topics: active.topics,
               }
             : null,
-          notebooks: notebooks.map((nb) => ({
+          conversations: conversations.map((nb) => ({
             id: nb.id,
             name: nb.name,
             description: nb.description,
@@ -135,13 +135,13 @@ export class ResourceHandlers {
         };
       }
 
-      // Handle individual notebook resource
-      if (uri.startsWith("notebooklm://library/")) {
-        const prefix = "notebooklm://library/";
+      // Handle individual conversation resource
+      if (uri.startsWith("conversationlm://library/")) {
+        const prefix = "conversationlm://library/";
         const encodedId = uri.slice(prefix.length);
         if (!encodedId) {
           throw new Error(
-            "Notebook resource requires an ID (e.g. notebooklm://library/{id})"
+            "Conversation resource requires an ID (e.g. conversationlm://library/{id})"
           );
         }
 
@@ -149,19 +149,19 @@ export class ResourceHandlers {
         try {
           id = decodeURIComponent(encodedId);
         } catch {
-          throw new Error(`Invalid notebook identifier encoding: ${encodedId}`);
+          throw new Error(`Invalid conversation identifier encoding: ${encodedId}`);
         }
 
         if (!/^[a-z0-9][a-z0-9-]{0,62}$/i.test(id)) {
           throw new Error(
-            `Invalid notebook identifier: ${encodedId}. Notebook IDs may only contain letters, numbers, and hyphens.`
+            `Invalid conversation identifier: ${encodedId}. Conversation IDs may only contain letters, numbers, and hyphens.`
           );
         }
 
-        const notebook = this.library.getNotebook(id);
+        const conversation = this.library.getConversation(id);
 
-        if (!notebook) {
-          throw new Error(`Notebook not found: ${id}`);
+        if (!conversation) {
+          throw new Error(`Conversation not found: ${id}`);
         }
 
         return {
@@ -169,19 +169,19 @@ export class ResourceHandlers {
             {
               uri,
               mimeType: "application/json",
-              text: JSON.stringify(notebook, null, 2),
+              text: JSON.stringify(conversation, null, 2),
             },
           ],
         };
       }
 
       // Legacy metadata resource (backwards compatibility)
-      if (uri === "notebooklm://metadata") {
-        const active = this.library.getActiveNotebook();
+      if (uri === "conversationlm://metadata") {
+        const active = this.library.getActiveConversation();
 
         if (!active) {
           throw new Error(
-            "No active notebook. Use notebooklm://library to see all notebooks."
+            "No active conversation. Use conversationlm://library to see all conversations."
           );
         }
 
@@ -190,11 +190,11 @@ export class ResourceHandlers {
           topics: active.topics,
           content_types: active.content_types,
           use_cases: active.use_cases,
-          notebook_url: active.url,
-          notebook_id: active.id,
+          gemini_url: active.url,
+          conversation_id: active.id,
           last_used: active.last_used,
           use_count: active.use_count,
-          note: "DEPRECATED: Use notebooklm://library or notebooklm://library/{id} instead",
+          note: "DEPRECATED: Use conversationlm://library or conversationlm://library/{id} instead",
         };
 
         return {
@@ -218,9 +218,9 @@ export class ResourceHandlers {
         if (ref?.type === "ref/resource") {
           // Complete variables for resource templates
           const uri = String(ref.uri || "");
-          // Notebook by ID template
-          if (uri === "notebooklm://library/{id}" && argument?.name === "id") {
-            const values = this.completeNotebookIds(argument?.value);
+          // Conversation by ID template
+          if (uri === "conversationlm://library/{id}" && argument?.name === "id") {
+            const values = this.completeConversationIds(argument?.value);
             return this.buildCompletion(values) as any;
           }
         }
@@ -232,12 +232,12 @@ export class ResourceHandlers {
   }
 
   /**
-   * Return notebook IDs matching the provided input (case-insensitive contains)
+   * Return conversation IDs matching the provided input (case-insensitive contains)
    */
-  private completeNotebookIds(input: unknown): string[] {
+  private completeConversationIds(input: unknown): string[] {
     const query = String(input ?? "").toLowerCase();
     return this.library
-      .listNotebooks()
+      .listConversations()
       .map((nb) => nb.id)
       .filter((id) => id.toLowerCase().includes(query))
       .slice(0, 50);

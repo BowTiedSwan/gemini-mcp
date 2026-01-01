@@ -6,8 +6,8 @@
 
 import { SessionManager } from "../session/session-manager.js";
 import { AuthManager } from "../auth/auth-manager.js";
-import { NotebookLibrary } from "../library/notebook-library.js";
-import type { AddNotebookInput, UpdateNotebookInput } from "../library/types.js";
+import { ConversationLibrary } from "../library/conversation-library.js";
+import type { AddConversationInput, UpdateConversationInput } from "../library/types.js";
 import { CONFIG, applyBrowserOptions, type BrowserOptions } from "../config.js";
 import { log } from "../utils/logger.js";
 import type {
@@ -27,9 +27,9 @@ const FOLLOW_UP_REMINDER =
 export class ToolHandlers {
   private sessionManager: SessionManager;
   private authManager: AuthManager;
-  private library: NotebookLibrary;
+  private library: ConversationLibrary;
 
-  constructor(sessionManager: SessionManager, authManager: AuthManager, library: NotebookLibrary) {
+  constructor(sessionManager: SessionManager, authManager: AuthManager, library: ConversationLibrary) {
     this.sessionManager = sessionManager;
     this.authManager = authManager;
     this.library = library;
@@ -42,48 +42,48 @@ export class ToolHandlers {
     args: {
       question: string;
       session_id?: string;
-      notebook_id?: string;
-      notebook_url?: string;
+      conversation_id?: string;
+      gemini_url?: string;
       show_browser?: boolean;
       browser_options?: BrowserOptions;
     },
     sendProgress?: ProgressCallback
   ): Promise<ToolResult<AskQuestionResult>> {
-    const { question, session_id, notebook_id, notebook_url, show_browser, browser_options } = args;
+    const { question, session_id, conversation_id, gemini_url, show_browser, browser_options } = args;
 
     log.info(`🔧 [TOOL] ask_question called`);
     log.info(`  Question: "${question.substring(0, 100)}"...`);
     if (session_id) {
       log.info(`  Session ID: ${session_id}`);
     }
-    if (notebook_id) {
-      log.info(`  Notebook ID: ${notebook_id}`);
+    if (conversation_id) {
+      log.info(`  Conversation ID: ${conversation_id}`);
     }
-    if (notebook_url) {
-      log.info(`  Notebook URL: ${notebook_url}`);
+    if (gemini_url) {
+      log.info(`  Conversation URL: ${gemini_url}`);
     }
 
     try {
-      // Resolve notebook URL
-      let resolvedNotebookUrl = notebook_url;
+      // Resolve conversation URL
+      let resolvedConversationUrl = gemini_url;
 
-      if (!resolvedNotebookUrl && notebook_id) {
-        const notebook = this.library.incrementUseCount(notebook_id);
-        if (!notebook) {
-          throw new Error(`Notebook not found in library: ${notebook_id}`);
+      if (!resolvedConversationUrl && conversation_id) {
+        const conversation = this.library.incrementUseCount(conversation_id);
+        if (!conversation) {
+          throw new Error(`Conversation not found in library: ${conversation_id}`);
         }
 
-        resolvedNotebookUrl = notebook.url;
-        log.info(`  Resolved notebook: ${notebook.name}`);
-      } else if (!resolvedNotebookUrl) {
-        const active = this.library.getActiveNotebook();
+        resolvedConversationUrl = conversation.url;
+        log.info(`  Resolved conversation: ${conversation.name}`);
+      } else if (!resolvedConversationUrl) {
+        const active = this.library.getActiveConversation();
         if (active) {
-          const notebook = this.library.incrementUseCount(active.id);
-          if (!notebook) {
-            throw new Error(`Active notebook not found: ${active.id}`);
+          const conversation = this.library.incrementUseCount(active.id);
+          if (!conversation) {
+            throw new Error(`Active conversation not found: ${active.id}`);
           }
-          resolvedNotebookUrl = notebook.url;
-          log.info(`  Using active notebook: ${notebook.name}`);
+          resolvedConversationUrl = conversation.url;
+          log.info(`  Using active conversation: ${conversation.name}`);
         }
       }
 
@@ -110,12 +110,12 @@ export class ToolHandlers {
         // Get or create session (with headless override to handle mode changes)
         const session = await this.sessionManager.getOrCreateSession(
           session_id,
-          resolvedNotebookUrl,
+          resolvedConversationUrl,
           overrideHeadless
         );
 
       // Progress: Asking question
-      await sendProgress?.("Asking question to NotebookLM...", 2, 5);
+      await sendProgress?.("Asking question to Gemini App...", 2, 5);
 
       // Ask the question (pass progress callback)
       const rawAnswer = await session.ask(question, sendProgress);
@@ -129,7 +129,7 @@ export class ToolHandlers {
         question,
         answer,
         session_id: session.sessionId,
-        notebook_url: session.notebookUrl,
+        gemini_url: session.geminiUrl,
         session_info: {
           age_seconds: sessionInfo.age_seconds,
           message_count: sessionInfo.message_count,
@@ -159,7 +159,7 @@ export class ToolHandlers {
         return {
           success: false,
           error:
-            "NotebookLM rate limit reached (50 queries/day for free accounts).\n\n" +
+            "Gemini App rate limit reached (50 queries/day for free accounts).\n\n" +
             "You can:\n" +
             "1. Use the 're_auth' tool to login with a different Google account\n" +
             "2. Wait until tomorrow for the quota to reset\n" +
@@ -193,7 +193,7 @@ export class ToolHandlers {
         age_seconds: number;
         inactive_seconds: number;
         message_count: number;
-        notebook_url: string;
+        gemini_url: string;
       }>;
     }> 
   > {
@@ -216,7 +216,7 @@ export class ToolHandlers {
           age_seconds: info.age_seconds,
           inactive_seconds: info.inactive_seconds,
           message_count: info.message_count,
-          notebook_url: info.notebook_url,
+          gemini_url: info.gemini_url,
         })),
       };
 
@@ -331,7 +331,7 @@ export class ToolHandlers {
     ToolResult<{
       status: string;
       authenticated: boolean;
-      notebook_url: string;
+      gemini_url: string;
       active_sessions: number;
       max_sessions: number;
       session_timeout: number;
@@ -355,7 +355,7 @@ export class ToolHandlers {
       const result = {
         status: "ok",
         authenticated,
-        notebook_url: CONFIG.notebookUrl || "not configured",
+        gemini_url: CONFIG.geminiUrl || "not configured",
         active_sessions: stats.active_sessions,
         max_sessions: stats.max_sessions,
         session_timeout: stats.session_timeout,
@@ -570,22 +570,22 @@ export class ToolHandlers {
   }
 
   /**
-   * Handle add_notebook tool
+   * Handle add_conversation tool
    */
-  async handleAddNotebook(args: AddNotebookInput): Promise<ToolResult<{ notebook: any }>> {
-    log.info(`🔧 [TOOL] add_notebook called`);
+  async handleAddConversation(args: AddConversationInput): Promise<ToolResult<{ conversation: any }>> {
+    log.info(`🔧 [TOOL] add_conversation called`);
     log.info(`  Name: ${args.name}`);
 
     try {
-      const notebook = this.library.addNotebook(args);
-      log.success(`✅ [TOOL] add_notebook completed: ${notebook.id}`);
+      const conversation = this.library.addConversation(args);
+      log.success(`✅ [TOOL] add_conversation completed: ${conversation.id}`);
       return {
         success: true,
-        data: { notebook },
+        data: { conversation },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      log.error(`❌ [TOOL] add_notebook failed: ${errorMessage}`);
+      log.error(`❌ [TOOL] add_conversation failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -594,21 +594,21 @@ export class ToolHandlers {
   }
 
   /**
-   * Handle list_notebooks tool
+   * Handle list_conversations tool
    */
-  async handleListNotebooks(): Promise<ToolResult<{ notebooks: any[] }>> {
-    log.info(`🔧 [TOOL] list_notebooks called`);
+  async handleListConversations(): Promise<ToolResult<{ conversations: any[] }>> {
+    log.info(`🔧 [TOOL] list_conversations called`);
 
     try {
-      const notebooks = this.library.listNotebooks();
-      log.success(`✅ [TOOL] list_notebooks completed (${notebooks.length} notebooks)`);
+      const conversations = this.library.listConversations();
+      log.success(`✅ [TOOL] list_conversations completed (${conversations.length} conversations)`);
       return {
         success: true,
-        data: { notebooks },
+        data: { conversations },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      log.error(`❌ [TOOL] list_notebooks failed: ${errorMessage}`);
+      log.error(`❌ [TOOL] list_conversations failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -617,30 +617,30 @@ export class ToolHandlers {
   }
 
   /**
-   * Handle get_notebook tool
+   * Handle get_conversation tool
    */
-  async handleGetNotebook(args: { id: string }): Promise<ToolResult<{ notebook: any }>> {
-    log.info(`🔧 [TOOL] get_notebook called`);
+  async handleGetConversation(args: { id: string }): Promise<ToolResult<{ conversation: any }>> {
+    log.info(`🔧 [TOOL] get_conversation called`);
     log.info(`  ID: ${args.id}`);
 
     try {
-      const notebook = this.library.getNotebook(args.id);
-      if (!notebook) {
-        log.warning(`⚠️  [TOOL] Notebook not found: ${args.id}`);
+      const conversation = this.library.getConversation(args.id);
+      if (!conversation) {
+        log.warning(`⚠️  [TOOL] Conversation not found: ${args.id}`);
         return {
           success: false,
-          error: `Notebook not found: ${args.id}`,
+          error: `Conversation not found: ${args.id}`,
         };
       }
 
-      log.success(`✅ [TOOL] get_notebook completed: ${notebook.name}`);
+      log.success(`✅ [TOOL] get_conversation completed: ${conversation.name}`);
       return {
         success: true,
-        data: { notebook },
+        data: { conversation },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      log.error(`❌ [TOOL] get_notebook failed: ${errorMessage}`);
+      log.error(`❌ [TOOL] get_conversation failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -649,22 +649,22 @@ export class ToolHandlers {
   }
 
   /**
-   * Handle select_notebook tool
+   * Handle select_conversation tool
    */
-  async handleSelectNotebook(args: { id: string }): Promise<ToolResult<{ notebook: any }>> {
-    log.info(`🔧 [TOOL] select_notebook called`);
+  async handleSelectConversation(args: { id: string }): Promise<ToolResult<{ conversation: any }>> {
+    log.info(`🔧 [TOOL] select_conversation called`);
     log.info(`  ID: ${args.id}`);
 
     try {
-      const notebook = this.library.selectNotebook(args.id);
-      log.success(`✅ [TOOL] select_notebook completed: ${notebook.name}`);
+      const conversation = this.library.selectConversation(args.id);
+      log.success(`✅ [TOOL] select_conversation completed: ${conversation.name}`);
       return {
         success: true,
-        data: { notebook },
+        data: { conversation },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      log.error(`❌ [TOOL] select_notebook failed: ${errorMessage}`);
+      log.error(`❌ [TOOL] select_conversation failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -673,22 +673,22 @@ export class ToolHandlers {
   }
 
   /**
-   * Handle update_notebook tool
+   * Handle update_conversation tool
    */
-  async handleUpdateNotebook(args: UpdateNotebookInput): Promise<ToolResult<{ notebook: any }>> {
-    log.info(`🔧 [TOOL] update_notebook called`);
+  async handleUpdateConversation(args: UpdateConversationInput): Promise<ToolResult<{ conversation: any }>> {
+    log.info(`🔧 [TOOL] update_conversation called`);
     log.info(`  ID: ${args.id}`);
 
     try {
-      const notebook = this.library.updateNotebook(args);
-      log.success(`✅ [TOOL] update_notebook completed: ${notebook.name}`);
+      const conversation = this.library.updateConversation(args);
+      log.success(`✅ [TOOL] update_conversation completed: ${conversation.name}`);
       return {
         success: true,
-        data: { notebook },
+        data: { conversation },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      log.error(`❌ [TOOL] update_notebook failed: ${errorMessage}`);
+      log.error(`❌ [TOOL] update_conversation failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -697,42 +697,42 @@ export class ToolHandlers {
   }
 
   /**
-   * Handle remove_notebook tool
+   * Handle remove_conversation tool
    */
-  async handleRemoveNotebook(args: { id: string }): Promise<ToolResult<{ removed: boolean; closed_sessions: number }>> {
-    log.info(`🔧 [TOOL] remove_notebook called`);
+  async handleRemoveConversation(args: { id: string }): Promise<ToolResult<{ removed: boolean; closed_sessions: number }>> {
+    log.info(`🔧 [TOOL] remove_conversation called`);
     log.info(`  ID: ${args.id}`);
 
     try {
-      const notebook = this.library.getNotebook(args.id);
-      if (!notebook) {
-        log.warning(`⚠️  [TOOL] Notebook not found: ${args.id}`);
+      const conversation = this.library.getConversation(args.id);
+      if (!conversation) {
+        log.warning(`⚠️  [TOOL] Conversation not found: ${args.id}`);
         return {
           success: false,
-          error: `Notebook not found: ${args.id}`,
+          error: `Conversation not found: ${args.id}`,
         };
       }
 
-      const removed = this.library.removeNotebook(args.id);
+      const removed = this.library.removeConversation(args.id);
       if (removed) {
-        const closedSessions = await this.sessionManager.closeSessionsForNotebook(
-          notebook.url
+        const closedSessions = await this.sessionManager.closeSessionsForConversation(
+          conversation.url
         );
-        log.success(`✅ [TOOL] remove_notebook completed`);
+        log.success(`✅ [TOOL] remove_conversation completed`);
         return {
           success: true,
           data: { removed: true, closed_sessions: closedSessions },
         };
       } else {
-        log.warning(`⚠️  [TOOL] Notebook not found: ${args.id}`);
+        log.warning(`⚠️  [TOOL] Conversation not found: ${args.id}`);
         return {
           success: false,
-          error: `Notebook not found: ${args.id}`,
+          error: `Conversation not found: ${args.id}`,
         };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      log.error(`❌ [TOOL] remove_notebook failed: ${errorMessage}`);
+      log.error(`❌ [TOOL] remove_conversation failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -741,22 +741,22 @@ export class ToolHandlers {
   }
 
   /**
-   * Handle search_notebooks tool
+   * Handle search_conversations tool
    */
-  async handleSearchNotebooks(args: { query: string }): Promise<ToolResult<{ notebooks: any[] }>> {
-    log.info(`🔧 [TOOL] search_notebooks called`);
+  async handleSearchConversations(args: { query: string }): Promise<ToolResult<{ conversations: any[] }>> {
+    log.info(`🔧 [TOOL] search_conversations called`);
     log.info(`  Query: "${args.query}"`);
 
     try {
-      const notebooks = this.library.searchNotebooks(args.query);
-      log.success(`✅ [TOOL] search_notebooks completed (${notebooks.length} results)`);
+      const conversations = this.library.searchConversations(args.query);
+      log.success(`✅ [TOOL] search_conversations completed (${conversations.length} results)`);
       return {
         success: true,
-        data: { notebooks },
+        data: { conversations },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      log.error(`❌ [TOOL] search_notebooks failed: ${errorMessage}`);
+      log.error(`❌ [TOOL] search_conversations failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -790,7 +790,7 @@ export class ToolHandlers {
   /**
    * Handle cleanup_data tool
    *
-   * ULTRATHINK Deep Cleanup - scans entire system for ALL NotebookLM MCP files
+   * ULTRATHINK Deep Cleanup - scans entire system for ALL Gemini App MCP files
    */
   async handleCleanupData(
     args: { confirm: boolean; preserve_library?: boolean }

@@ -1,7 +1,7 @@
 /**
  * Settings Manager
  * 
- * Handles persistent configuration for the NotebookLM MCP Server.
+ * Handles persistent configuration for the Gemini App MCP Server.
  * Manages profiles, disabled tools, and environment variable overrides.
  */
 
@@ -29,21 +29,21 @@ const PROFILES: Record<ProfileName, string[]> = {
   minimal: [
     "ask_question",
     "get_health",
-    "list_notebooks",
-    "select_notebook",
-    "get_notebook" // Added as it is read-only and useful
+    "list_conversations",
+    "select_conversation",
+    "get_conversation" // Added as it is read-only and useful
   ],
   standard: [
     "ask_question",
     "get_health",
-    "list_notebooks",
-    "select_notebook",
-    "get_notebook",
+    "list_conversations",
+    "select_conversation",
+    "get_conversation",
     "setup_auth",
     "list_sessions",
-    "add_notebook",
-    "update_notebook",
-    "search_notebooks"
+    "add_conversation",
+    "update_conversation",
+    "search_conversations"
   ],
   full: ["*"] // All tools
 };
@@ -99,8 +99,8 @@ export class SettingsManager {
    * Get effective configuration (merging File settings with Env Vars)
    */
   getEffectiveSettings(): Settings {
-    const envProfile = process.env.NOTEBOOKLM_PROFILE as ProfileName;
-    const envDisabled = process.env.NOTEBOOKLM_DISABLED_TOOLS;
+    const envProfile = process.env.CONVERSATIONLM_PROFILE as ProfileName;
+    const envDisabled = process.env.CONVERSATIONLM_DISABLED_TOOLS;
 
     const effectiveProfile = (envProfile && PROFILES[envProfile]) ? envProfile : this.settings.profile;
     

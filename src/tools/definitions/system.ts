@@ -16,7 +16,7 @@ export const systemTools: Tool[] = [
   {
     name: "setup_auth",
     description:
-      "Google authentication for NotebookLM access - opens a browser window for manual login to your Google account. " +
+      "Google authentication for Gemini App access - opens a browser window for manual login to your Google account. " +
       "Returns immediately after opening the browser. You have up to 10 minutes to complete the login. " +
       "Use 'get_health' tool afterwards to verify authentication was saved successfully. " +
       "Use this for first-time authentication or when auto-login credentials are not available. " +
@@ -63,7 +63,7 @@ export const systemTools: Tool[] = [
     description:
       "Switch to a different Google account or re-authenticate. " +
       "Use this when:\n" +
-      "- NotebookLM rate limit is reached (50 queries/day for free accounts)\n" +
+      "- Gemini App rate limit is reached (50 queries/day for free accounts)\n" +
       "- You want to switch to a different Google account\n" +
       "- Authentication is broken and needs a fresh start\n\n" +
       "This will:\n" +
@@ -112,19 +112,19 @@ export const systemTools: Tool[] = [
   {
     name: "cleanup_data",
     description:
-      "ULTRATHINK Deep Cleanup - Scans entire system for ALL NotebookLM MCP data files across 8 categories. Always runs in deep mode, shows categorized preview before deletion.\n\n" +
+      "ULTRATHINK Deep Cleanup - Scans entire system for ALL Gemini App MCP data files across 8 categories. Always runs in deep mode, shows categorized preview before deletion.\n\n" +
       "⚠️ CRITICAL: Close ALL Chrome/Chromium instances BEFORE running this tool! Open browsers can prevent cleanup and cause issues.\n\n" +
       "Categories scanned:\n" +
-      "1. Legacy Installation (notebooklm-mcp-nodejs) - Old paths with -nodejs suffix\n" +
-      "2. Current Installation (notebooklm-mcp) - Active data, browser profiles, library\n" +
+      "1. Legacy Installation (gemini-mcp-nodejs) - Old paths with -nodejs suffix\n" +
+      "2. Current Installation (gemini-mcp) - Active data, browser profiles, library\n" +
       "3. NPM/NPX Cache - Cached installations from npx\n" +
       "4. Claude CLI MCP Logs - MCP server logs from Claude CLI\n" +
       "5. Temporary Backups - Backup directories in system temp\n" +
       "6. Claude Projects Cache - Project-specific cache (optional)\n" +
       "7. Editor Logs (Cursor/VSCode) - MCP logs from code editors (optional)\n" +
-      "8. Trash Files - Deleted notebooklm files in system trash (optional)\n\n" +
+      "8. Trash Files - Deleted conversationlm files in system trash (optional)\n\n" +
       "Works cross-platform (Linux, Windows, macOS). Safe by design: shows detailed preview before deletion, requires explicit confirmation.\n\n" +
-      "LIBRARY PRESERVATION: Set preserve_library=true to keep your notebook library.json file while cleaning everything else.\n\n" +
+      "LIBRARY PRESERVATION: Set preserve_library=true to keep your conversation library.json file while cleaning everything else.\n\n" +
       "RECOMMENDED WORKFLOW for fresh start:\n" +
       "1. Ask user to close ALL Chrome/Chromium instances\n" +
       "2. Run cleanup_data(confirm=false, preserve_library=true) to preview\n" +
@@ -144,7 +144,7 @@ export const systemTools: Tool[] = [
           type: "boolean",
           description:
             "Preserve library.json file during cleanup. Default: false. " +
-            "Set to true to keep your notebook library while deleting everything else (browser data, caches, logs).",
+            "Set to true to keep your conversation library while deleting everything else (browser data, caches, logs).",
           default: false,
         },
       },

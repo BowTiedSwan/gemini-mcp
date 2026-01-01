@@ -1,5 +1,5 @@
 /**
- * Configuration for NotebookLM MCP Server
+ * Configuration for Gemini App MCP Server
  *
  * Config Priority (highest to lowest):
  * 1. Hardcoded Defaults (works out of the box!)
@@ -14,22 +14,22 @@ import fs from "fs";
 import path from "path";
 
 // Cross-platform data paths (unified without -nodejs suffix)
-// Linux: ~/.local/share/notebooklm-mcp/
-// macOS: ~/Library/Application Support/notebooklm-mcp/
-// Windows: %APPDATA%\notebooklm-mcp\
+// Linux: ~/.local/share/gemini-mcp/
+// macOS: ~/Library/Application Support/gemini-mcp/
+// Windows: %APPDATA%\gemini-mcp\
 // IMPORTANT: Pass empty string suffix to disable envPaths' default '-nodejs' suffix!
-const paths = envPaths("notebooklm-mcp", {suffix: ""});
+const paths = envPaths("gemini-mcp", {suffix: ""});
 
 /**
- * Google NotebookLM Auth URL (used by setup_auth)
- * This is the base Google login URL that redirects to NotebookLM
+ * Google Gemini Auth URL (used by setup_auth)
+ * This is the base Google login URL that redirects to Gemini App
  */
-export const NOTEBOOKLM_AUTH_URL =
-  "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fnotebooklm.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin";
+export const GEMINI_AUTH_URL =
+  "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fgemini.google.com%2Fapp&flowName=GlifWebSignIn&flowEntry=ServiceLogin";
 
 export interface Config {
-  // NotebookLM - optional, used for legacy default notebook
-  notebookUrl: string;
+  // Gemini App - optional, used for legacy default conversation
+  geminiUrl: string;
 
   // Browser Settings
   headless: boolean;
@@ -63,11 +63,11 @@ export interface Config {
   chromeProfileDir: string;
   chromeInstancesDir: string;
 
-  // Library Configuration (optional, for default notebook metadata)
-  notebookDescription: string;
-  notebookTopics: string[];
-  notebookContentTypes: string[];
-  notebookUseCases: string[];
+  // Library Configuration (optional, for default conversation metadata)
+  conversationDescription: string;
+  conversationTopics: string[];
+  conversationContentTypes: string[];
+  conversationUseCases: string[];
 
   // Multi-instance profile strategy
   profileStrategy: "auto" | "single" | "isolated";
@@ -82,8 +82,8 @@ export interface Config {
  * Default Configuration (works out of the box!)
  */
 const DEFAULTS: Config = {
-  // NotebookLM
-  notebookUrl: "",
+  // Gemini App
+  geminiUrl: "",
 
   // Browser Settings
   headless: true,
@@ -118,10 +118,10 @@ const DEFAULTS: Config = {
   chromeInstancesDir: path.join(paths.data, "chrome_profile_instances"),
 
   // Library Configuration
-  notebookDescription: "General knowledge base",
-  notebookTopics: ["General topics"],
-  notebookContentTypes: ["documentation", "examples"],
-  notebookUseCases: ["General research"],
+  conversationDescription: "General knowledge base",
+  conversationTopics: ["General topics"],
+  conversationContentTypes: ["documentation", "examples"],
+  conversationUseCases: ["General research"],
 
   // Multi-instance strategy
   profileStrategy: "auto",
@@ -168,7 +168,7 @@ function applyEnvOverrides(config: Config): Config {
   return {
     ...config,
     // Override with env vars if present
-    notebookUrl: process.env.NOTEBOOK_URL || config.notebookUrl,
+    geminiUrl: process.env.CONVERSATION_URL || config.geminiUrl,
     headless: parseBoolean(process.env.HEADLESS, config.headless),
     browserTimeout: parseInteger(process.env.BROWSER_TIMEOUT, config.browserTimeout),
     maxSessions: parseInteger(process.env.MAX_SESSIONS, config.maxSessions),
@@ -185,16 +185,16 @@ function applyEnvOverrides(config: Config): Config {
     typingWpmMax: parseInteger(process.env.TYPING_WPM_MAX, config.typingWpmMax),
     minDelayMs: parseInteger(process.env.MIN_DELAY_MS, config.minDelayMs),
     maxDelayMs: parseInteger(process.env.MAX_DELAY_MS, config.maxDelayMs),
-    notebookDescription: process.env.NOTEBOOK_DESCRIPTION || config.notebookDescription,
-    notebookTopics: parseArray(process.env.NOTEBOOK_TOPICS, config.notebookTopics),
-    notebookContentTypes: parseArray(process.env.NOTEBOOK_CONTENT_TYPES, config.notebookContentTypes),
-    notebookUseCases: parseArray(process.env.NOTEBOOK_USE_CASES, config.notebookUseCases),
-    profileStrategy: (process.env.NOTEBOOK_PROFILE_STRATEGY as any) || config.profileStrategy,
-    cloneProfileOnIsolated: parseBoolean(process.env.NOTEBOOK_CLONE_PROFILE, config.cloneProfileOnIsolated),
-    cleanupInstancesOnStartup: parseBoolean(process.env.NOTEBOOK_CLEANUP_ON_STARTUP, config.cleanupInstancesOnStartup),
-    cleanupInstancesOnShutdown: parseBoolean(process.env.NOTEBOOK_CLEANUP_ON_SHUTDOWN, config.cleanupInstancesOnShutdown),
-    instanceProfileTtlHours: parseInteger(process.env.NOTEBOOK_INSTANCE_TTL_HOURS, config.instanceProfileTtlHours),
-    instanceProfileMaxCount: parseInteger(process.env.NOTEBOOK_INSTANCE_MAX_COUNT, config.instanceProfileMaxCount),
+    conversationDescription: process.env.CONVERSATION_DESCRIPTION || config.conversationDescription,
+    conversationTopics: parseArray(process.env.CONVERSATION_TOPICS, config.conversationTopics),
+    conversationContentTypes: parseArray(process.env.CONVERSATION_CONTENT_TYPES, config.conversationContentTypes),
+    conversationUseCases: parseArray(process.env.CONVERSATION_USE_CASES, config.conversationUseCases),
+    profileStrategy: (process.env.CONVERSATION_PROFILE_STRATEGY as any) || config.profileStrategy,
+    cloneProfileOnIsolated: parseBoolean(process.env.CONVERSATION_CLONE_PROFILE, config.cloneProfileOnIsolated),
+    cleanupInstancesOnStartup: parseBoolean(process.env.CONVERSATION_CLEANUP_ON_STARTUP, config.cleanupInstancesOnStartup),
+    cleanupInstancesOnShutdown: parseBoolean(process.env.CONVERSATION_CLEANUP_ON_SHUTDOWN, config.cleanupInstancesOnShutdown),
+    instanceProfileTtlHours: parseInteger(process.env.CONVERSATION_INSTANCE_TTL_HOURS, config.instanceProfileTtlHours),
+    instanceProfileMaxCount: parseInteger(process.env.CONVERSATION_INSTANCE_MAX_COUNT, config.instanceProfileMaxCount),
   };
 }
 

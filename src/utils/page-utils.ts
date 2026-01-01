@@ -1,5 +1,5 @@
 /**
- * Page utilities for extracting responses from NotebookLM web UI
+ * Page utilities for extracting responses from Gemini App web UI
  *
  * This module provides functions to:
  * - Extract latest assistant responses from the page
@@ -190,14 +190,14 @@ export async function waitForLatestAnswer(
   while (Date.now() < deadline) {
     pollCount++;
 
-    // Check if NotebookLM is still "thinking" (most reliable indicator)
+    // Check if Gemini App is still "thinking" (most reliable indicator)
     try {
       const thinkingElement = await page.$('div.thinking-message');
       if (thinkingElement) {
         const isVisible = await thinkingElement.isVisible();
         if (isVisible) {
           if (debug && pollCount % 5 === 0) {
-            log.debug("🔍 [DEBUG] NotebookLM still thinking (div.thinking-message visible)...");
+            log.debug("🔍 [DEBUG] Gemini App still thinking (div.thinking-message visible)...");
           }
           await page.waitForTimeout(pollIntervalMs);
           continue;
@@ -287,7 +287,7 @@ async function extractLatestText(
   debug: boolean,
   pollCount: number
 ): Promise<string | null> {
-  // Try the primary selector first (most specific for NotebookLM)
+  // Try the primary selector first (most specific for Gemini App)
   const primarySelector = ".to-user-container";
   try {
     const containers = await page.$$(primarySelector);

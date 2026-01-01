@@ -1,24 +1,24 @@
 /**
- * NotebookLM Library Types
+ * Gemini App Library Types
  *
- * Defines the structure for managing multiple NotebookLM notebooks
+ * Defines the structure for managing multiple Gemini App conversations
  * in a persistent library that Claude can manage autonomously.
  */
 
 /**
- * Single notebook entry in the library
+ * Single conversation entry in the library
  */
-export interface NotebookEntry {
+export interface ConversationEntry {
   // Identification
   id: string; // Unique identifier (slug format, e.g., "n8n-docs")
-  url: string; // NotebookLM URL
+  url: string; // Gemini App URL
   name: string; // Display name (e.g., "n8n Workflow Automation")
 
   // Metadata for Claude's autonomous decision-making
-  description: string; // What knowledge is in this notebook
+  description: string; // What knowledge is in this conversation
   topics: string[]; // Topics covered
   content_types: string[]; // Types of content (docs, examples, etc.)
-  use_cases: string[]; // When to use this notebook
+  use_cases: string[]; // When to use this conversation
 
   // Usage tracking
   added_at: string; // ISO timestamp when added
@@ -30,20 +30,20 @@ export interface NotebookEntry {
 }
 
 /**
- * The complete notebook library
+ * The complete conversation library
  */
 export interface Library {
-  notebooks: NotebookEntry[]; // All notebooks in library
-  active_notebook_id: string | null; // Currently selected notebook
+  conversations: ConversationEntry[]; // All conversations in library
+  active_conversation_id: string | null; // Currently selected conversation
   last_modified: string; // ISO timestamp of last modification
   version: string; // Library format version (for future migrations)
 }
 
 /**
- * Input for adding a new notebook
+ * Input for adding a new conversation
  */
-export interface AddNotebookInput {
-  url: string; // Required: NotebookLM URL
+export interface AddConversationInput {
+  url: string; // Required: Gemini App URL
   name: string; // Required: Display name
   description: string; // Required: What's in it
   topics: string[]; // Required: Topics covered
@@ -53,10 +53,10 @@ export interface AddNotebookInput {
 }
 
 /**
- * Input for updating a notebook
+ * Input for updating a conversation
  */
-export interface UpdateNotebookInput {
-  id: string; // Required: which notebook to update
+export interface UpdateConversationInput {
+  id: string; // Required: which conversation to update
   name?: string;
   description?: string;
   topics?: string[];
@@ -70,9 +70,9 @@ export interface UpdateNotebookInput {
  * Statistics about library usage
  */
 export interface LibraryStats {
-  total_notebooks: number;
-  active_notebook: string | null;
-  most_used_notebook: string | null;
+  total_conversations: number;
+  active_conversation: string | null;
+  most_used_conversation: string | null;
   total_queries: number;
   last_modified: string;
 }

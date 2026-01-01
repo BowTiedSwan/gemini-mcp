@@ -1,5 +1,5 @@
 /**
- * Global type definitions for NotebookLM MCP Server
+ * Global type definitions for Gemini App MCP Server
  */
 
 /**
@@ -12,7 +12,7 @@ export interface SessionInfo {
   age_seconds: number;
   inactive_seconds: number;
   message_count: number;
-  notebook_url: string;
+  gemini_url: string;
 }
 
 /**
@@ -23,7 +23,7 @@ export interface AskQuestionResult {
   question: string;
   answer?: string;
   error?: string;
-  notebook_url: string;
+  gemini_url: string;
   session_id?: string;
   session_info?: {
     age_seconds: number;

@@ -1,10 +1,10 @@
 /**
- * Cleanup Manager for NotebookLM MCP Server
+ * Cleanup Manager for Gemini App MCP Server
  *
  * ULTRATHINK EDITION - Complete cleanup across all platforms!
  *
  * Handles safe removal of:
- * - Legacy data from notebooklm-mcp-nodejs
+ * - Legacy data from gemini-mcp-nodejs
  * - Current installation data
  * - Browser profiles and session data
  * - NPM/NPX cache
@@ -62,9 +62,9 @@ export class CleanupManager {
     // IMPORTANT: envPaths() has a default suffix 'nodejs', so we must explicitly disable it!
 
     // Legacy paths with -nodejs suffix (using default suffix behavior)
-    this.legacyPaths = envPaths("notebooklm-mcp");  // This becomes notebooklm-mcp-nodejs by default
+    this.legacyPaths = envPaths("gemini-mcp");  // This becomes gemini-mcp-nodejs by default
     // Current paths without suffix (disable the default suffix with empty string)
-    this.currentPaths = envPaths("notebooklm-mcp", {suffix: ""});
+    this.currentPaths = envPaths("gemini-mcp", {suffix: ""});
     // Platform-agnostic paths
     this.homeDir = os.homedir();
     this.tempDir = os.tmpdir();
@@ -171,36 +171,36 @@ export class CleanupManager {
     if (platform === "linux") {
       // Linux-specific paths
       paths.push(
-        path.join(this.homeDir, ".config", "notebooklm-mcp"),
-        path.join(this.homeDir, ".config", "notebooklm-mcp-nodejs"),
-        path.join(this.homeDir, ".local", "share", "notebooklm-mcp"),
-        path.join(this.homeDir, ".local", "share", "notebooklm-mcp-nodejs"),
-        path.join(this.homeDir, ".cache", "notebooklm-mcp"),
-        path.join(this.homeDir, ".cache", "notebooklm-mcp-nodejs"),
-        path.join(this.homeDir, ".local", "state", "notebooklm-mcp"),
-        path.join(this.homeDir, ".local", "state", "notebooklm-mcp-nodejs")
+        path.join(this.homeDir, ".config", "gemini-mcp"),
+        path.join(this.homeDir, ".config", "gemini-mcp-nodejs"),
+        path.join(this.homeDir, ".local", "share", "gemini-mcp"),
+        path.join(this.homeDir, ".local", "share", "gemini-mcp-nodejs"),
+        path.join(this.homeDir, ".cache", "gemini-mcp"),
+        path.join(this.homeDir, ".cache", "gemini-mcp-nodejs"),
+        path.join(this.homeDir, ".local", "state", "gemini-mcp"),
+        path.join(this.homeDir, ".local", "state", "gemini-mcp-nodejs")
       );
     } else if (platform === "darwin") {
       // macOS-specific paths
       paths.push(
-        path.join(this.homeDir, "Library", "Application Support", "notebooklm-mcp"),
-        path.join(this.homeDir, "Library", "Application Support", "notebooklm-mcp-nodejs"),
-        path.join(this.homeDir, "Library", "Preferences", "notebooklm-mcp"),
-        path.join(this.homeDir, "Library", "Preferences", "notebooklm-mcp-nodejs"),
-        path.join(this.homeDir, "Library", "Caches", "notebooklm-mcp"),
-        path.join(this.homeDir, "Library", "Caches", "notebooklm-mcp-nodejs"),
-        path.join(this.homeDir, "Library", "Logs", "notebooklm-mcp"),
-        path.join(this.homeDir, "Library", "Logs", "notebooklm-mcp-nodejs")
+        path.join(this.homeDir, "Library", "Application Support", "gemini-mcp"),
+        path.join(this.homeDir, "Library", "Application Support", "gemini-mcp-nodejs"),
+        path.join(this.homeDir, "Library", "Preferences", "gemini-mcp"),
+        path.join(this.homeDir, "Library", "Preferences", "gemini-mcp-nodejs"),
+        path.join(this.homeDir, "Library", "Caches", "gemini-mcp"),
+        path.join(this.homeDir, "Library", "Caches", "gemini-mcp-nodejs"),
+        path.join(this.homeDir, "Library", "Logs", "gemini-mcp"),
+        path.join(this.homeDir, "Library", "Logs", "gemini-mcp-nodejs")
       );
     } else if (platform === "win32") {
       // Windows-specific paths
       const localAppData = process.env.LOCALAPPDATA || path.join(this.homeDir, "AppData", "Local");
       const appData = process.env.APPDATA || path.join(this.homeDir, "AppData", "Roaming");
       paths.push(
-        path.join(localAppData, "notebooklm-mcp"),
-        path.join(localAppData, "notebooklm-mcp-nodejs"),
-        path.join(appData, "notebooklm-mcp"),
-        path.join(appData, "notebooklm-mcp-nodejs")
+        path.join(localAppData, "gemini-mcp"),
+        path.join(localAppData, "gemini-mcp-nodejs"),
+        path.join(appData, "gemini-mcp"),
+        path.join(appData, "gemini-mcp-nodejs")
       );
     }
 
@@ -225,8 +225,8 @@ export class CleanupManager {
         return found;
       }
 
-      // Search for notebooklm-mcp in npx cache
-      const pattern = path.join(npxPath, "*/node_modules/notebooklm-mcp");
+      // Search for gemini-mcp in npx cache
+      const pattern = path.join(npxPath, "*/node_modules/gemini-mcp");
       const matches = await globby(pattern, { onlyDirectories: true, absolute: true });
       found.push(...matches);
     } catch (error) {
@@ -249,10 +249,10 @@ export class CleanupManager {
         return found;
       }
 
-      // Search for notebooklm MCP logs
+      // Search for conversationlm MCP logs
       const patterns = [
-        path.join(claudeCliPath, "*/mcp-logs-notebooklm"),
-        path.join(claudeCliPath, "*notebooklm-mcp*"),
+        path.join(claudeCliPath, "*/mcp-logs-conversationlm"),
+        path.join(claudeCliPath, "*gemini-mcp*"),
       ];
 
       for (const pattern of patterns) {
@@ -279,8 +279,8 @@ export class CleanupManager {
         return found;
       }
 
-      // Search for notebooklm-mcp projects
-      const pattern = path.join(projectsPath, "*notebooklm-mcp*");
+      // Search for gemini-mcp projects
+      const pattern = path.join(projectsPath, "*gemini-mcp*");
       const matches = await globby(pattern, { onlyDirectories: true, absolute: true });
       found.push(...matches);
     } catch (error) {
@@ -297,8 +297,8 @@ export class CleanupManager {
     const found: string[] = [];
 
     try {
-      // Search for notebooklm backup directories in temp
-      const pattern = path.join(this.tempDir, "notebooklm-backup-*");
+      // Search for conversationlm backup directories in temp
+      const pattern = path.join(this.tempDir, "conversationlm-backup-*");
       const matches = await globby(pattern, { onlyDirectories: true, absolute: true });
       found.push(...matches);
     } catch (error) {
@@ -322,8 +322,8 @@ export class CleanupManager {
           continue;
         }
 
-        // Search for MCP notebooklm logs
-        const pattern = path.join(editorPath, "**/exthost/**/*notebooklm*.log");
+        // Search for MCP conversationlm logs
+        const pattern = path.join(editorPath, "**/exthost/**/*conversationlm*.log");
         const matches = await globby(pattern, { onlyFiles: true, absolute: true });
         found.push(...matches);
       }
@@ -346,9 +346,9 @@ export class CleanupManager {
         return found;
       }
 
-      // Search for notebooklm files in trash
+      // Search for conversationlm files in trash
       const patterns = [
-        path.join(trashPath, "**/*notebooklm*"),
+        path.join(trashPath, "**/*conversationlm*"),
       ];
 
       for (const pattern of patterns) {
@@ -381,7 +381,7 @@ export class CleanupManager {
     const allPaths: Set<string> = new Set();
     let totalSizeBytes = 0;
 
-    // Category 1: Legacy Paths (notebooklm-mcp-nodejs & manual legacy paths)
+    // Category 1: Legacy Paths (gemini-mcp-nodejs & manual legacy paths)
     if (mode === "legacy" || mode === "all" || mode === "deep") {
       const legacyPaths: string[] = [];
       let legacyBytes = 0;
@@ -418,7 +418,7 @@ export class CleanupManager {
 
       if (legacyPaths.length > 0) {
         categories.push({
-          name: "Legacy Installation (notebooklm-mcp-nodejs)",
+          name: "Legacy Installation (gemini-mcp-nodejs)",
           description: "Old installation data with -nodejs suffix and legacy config files",
           paths: legacyPaths,
           totalBytes: legacyBytes,
@@ -475,7 +475,7 @@ export class CleanupManager {
           : "Active installation data and browser profiles";
 
         categories.push({
-          name: "Current Installation (notebooklm-mcp)",
+          name: "Current Installation (gemini-mcp)",
           description,
           paths: currentPaths,
           totalBytes: currentBytes,
@@ -500,7 +500,7 @@ export class CleanupManager {
         if (npmBytes > 0) {
           categories.push({
             name: "NPM/NPX Cache",
-            description: "NPX cached installations of notebooklm-mcp",
+            description: "NPX cached installations of gemini-mcp",
             paths: npmPaths,
             totalBytes: npmBytes,
             optional: false,
@@ -625,7 +625,7 @@ export class CleanupManager {
         if (trashBytes > 0) {
           categories.push({
             name: "Trash Files",
-            description: "Deleted notebooklm files in system trash",
+            description: "Deleted conversationlm files in system trash",
             paths: trashPaths,
             totalBytes: trashBytes,
             optional: true,

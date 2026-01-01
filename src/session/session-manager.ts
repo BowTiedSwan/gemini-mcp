@@ -1,7 +1,7 @@
 /**
  * Session Manager
  *
- * Manages multiple parallel browser sessions for NotebookLM API
+ * Manages multiple parallel browser sessions for Gemini App API
  *
  * Features:
  * - Session lifecycle management
@@ -63,21 +63,21 @@ export class SessionManager {
    * Get existing session or create a new one
    *
    * @param sessionId Optional session ID to reuse existing session
-   * @param notebookUrl Notebook URL for the session
+   * @param geminiUrl Conversation URL for the session
    * @param overrideHeadless Optional override for headless mode (true = show browser)
    */
   async getOrCreateSession(
     sessionId?: string,
-    notebookUrl?: string,
+    geminiUrl?: string,
     overrideHeadless?: boolean
   ): Promise<BrowserSession> {
-    // Determine target notebook URL
-    const targetUrl = (notebookUrl || CONFIG.notebookUrl || "").trim();
+    // Determine target conversation URL
+    const targetUrl = (geminiUrl || CONFIG.geminiUrl || "").trim();
     if (!targetUrl) {
-      throw new Error("Notebook URL is required to create a session");
+      throw new Error("Conversation URL is required to create a session");
     }
     if (!targetUrl.startsWith("http")) {
-      throw new Error("Notebook URL must be an absolute URL");
+      throw new Error("Conversation URL must be an absolute URL");
     }
 
     // Generate ID if not provided
@@ -102,8 +102,8 @@ export class SessionManager {
     // Return existing session if found
     if (this.sessions.has(sessionId)) {
       const session = this.sessions.get(sessionId)!;
-      if (session.notebookUrl !== targetUrl) {
-        log.warning(`♻️  Replacing session ${sessionId} with new notebook URL`);
+      if (session.geminiUrl !== targetUrl) {
+        log.warning(`♻️  Replacing session ${sessionId} with new conversation URL`);
         await session.close();
         this.sessions.delete(sessionId);
       } else {
@@ -180,13 +180,13 @@ export class SessionManager {
   }
 
   /**
-   * Close all sessions that are using the provided notebook URL
+   * Close all sessions that are using the provided conversation URL
    */
-  async closeSessionsForNotebook(url: string): Promise<number> {
+  async closeSessionsForConversation(url: string): Promise<number> {
     let closed = 0;
 
     for (const [sessionId, session] of Array.from(this.sessions.entries())) {
-      if (session.notebookUrl === url) {
+      if (session.geminiUrl === url) {
         try {
           await session.close();
         } catch (error) {
@@ -200,7 +200,7 @@ export class SessionManager {
 
     if (closed > 0) {
       log.warning(
-        `🧹 Closed ${closed} session(s) using removed notebook (${this.sessions.size}/${this.maxSessions} active)`
+        `🧹 Closed ${closed} session(s) using removed conversation (${this.sessions.size}/${this.maxSessions} active)`
       );
     }
 
