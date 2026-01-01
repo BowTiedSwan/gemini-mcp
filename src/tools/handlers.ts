@@ -17,6 +17,7 @@ import type {
 } from "../types.js";
 import { RateLimitError } from "../errors.js";
 import { CleanupManager } from "../utils/cleanup-manager.js";
+import { randomDelay } from "../utils/stealth-utils.js";
 
 const FOLLOW_UP_REMINDER =
   "\n\nEXTREMELY IMPORTANT: Is that ALL you need to know? You can always ask another question using the same session ID! Think about it carefully: before you reply to the user, review their original request and this answer. If anything is still unclear or missing, ask me another question first.";
@@ -874,6 +875,274 @@ export class ToolHandlers {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log.error(`❌ [TOOL] cleanup_data failed: ${errorMessage}`);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Handle select_model tool
+   */
+  async handleSelectModel(
+    args: {
+      model: string;
+      session_id?: string;
+    }
+  ): Promise<ToolResult<{ status: string; model: string; session_id: string }>> {
+    const { model, session_id } = args;
+
+    log.info(`🔧 [TOOL] select_model called`);
+    log.info(`  Model: ${model}`);
+    if (session_id) {
+      log.info(`  Session ID: ${session_id}`);
+    }
+
+    try {
+      // Get or create session
+      const session = await this.sessionManager.getOrCreateSession(
+        session_id,
+        undefined,
+        undefined
+      );
+
+      // Get the page from the session
+      const sessionPage = (session as any).page;
+      if (!sessionPage) {
+        throw new Error("Session page not initialized");
+      }
+
+      // Map model names to display names
+      const modelMap: Record<string, string> = {
+        fast: "Gemini 3",
+        thinking: "Thinking",
+        pro: "Pro",
+      };
+
+      const displayName = modelMap[model];
+      if (!displayName) {
+        throw new Error(`Invalid model: ${model}. Must be one of: fast, thinking, pro`);
+      }
+
+      log.info(`  🎯 Selecting model: ${displayName}...`);
+
+      // Click the model selection button (the "Pro" button or model indicator)
+      // We'll look for various possible selectors
+      const possibleSelectors = [
+        'button:has-text("Pro")',
+        'button:has-text("Gemini 3")',
+        'button:has-text("Thinking")',
+        'button[aria-label*="model"]',
+        'div[role="button"]:has-text("Pro")',
+        'div[role="button"]:has-text("Gemini 3")',
+      ];
+
+      let clicked = false;
+      for (const selector of possibleSelectors) {
+        try {
+          const element = await sessionPage.$(selector);
+          if (element) {
+            await element.click();
+            clicked = true;
+            log.success(`  ✅ Clicked model selector: ${selector}`);
+            break;
+          }
+        } catch (e) {
+          // Try next selector
+          continue;
+        }
+      }
+
+      if (!clicked) {
+        throw new Error("Could not find model selection button. The UI may have changed.");
+      }
+
+      // Wait for menu to appear
+      await randomDelay(500, 1000);
+
+      // Click the selected model option in the menu
+      const optionSelectors = [
+        `div[role="menuitem"]:has-text("${displayName}")`,
+        `button:has-text("${displayName}")`,
+        `div[role="option"]:has-text("${displayName}")`,
+      ];
+
+      let optionClicked = false;
+      for (const selector of optionSelectors) {
+        try {
+          const element = await sessionPage.$(selector);
+          if (element) {
+            await element.click();
+            optionClicked = true;
+            log.success(`  ✅ Selected model: ${displayName}`);
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+
+      if (!optionClicked) {
+        throw new Error(`Could not select model option: ${displayName}`);
+      }
+
+      // Wait for UI to update
+      await randomDelay(1000, 1500);
+
+      log.success(`✅ [TOOL] select_model completed`);
+      return {
+        success: true,
+        data: {
+          status: "success",
+          model: displayName,
+          session_id: session.sessionId,
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log.error(`❌ [TOOL] select_model failed: ${errorMessage}`);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Handle use_gemini_tool tool
+   */
+  async handleUseGeminiTool(
+    args: {
+      tool: string;
+      prompt: string;
+      session_id?: string;
+    },
+    sendProgress?: ProgressCallback
+  ): Promise<ToolResult<{ status: string; tool: string; result: string; session_id: string }>> {
+    const { tool, prompt, session_id } = args;
+
+    log.info(`🔧 [TOOL] use_gemini_tool called`);
+    log.info(`  Tool: ${tool}`);
+    log.info(`  Prompt: "${prompt.substring(0, 100)}"...`);
+    if (session_id) {
+      log.info(`  Session ID: ${session_id}`);
+    }
+
+    try {
+      // Get or create session
+      await sendProgress?.("Getting or creating browser session...", 1, 5);
+      const session = await this.sessionManager.getOrCreateSession(
+        session_id,
+        undefined,
+        undefined
+      );
+
+      // Get the page from the session
+      const sessionPage = (session as any).page;
+      if (!sessionPage) {
+        throw new Error("Session page not initialized");
+      }
+
+      // Map tool names to display names
+      const toolMap: Record<string, string> = {
+        deep_research: "Deep research",
+        create_video: "Create videos",
+        create_image: "Create images",
+      };
+
+      const displayName = toolMap[tool];
+      if (!displayName) {
+        throw new Error(
+          `Invalid tool: ${tool}. Must be one of: deep_research, create_video, create_image`
+        );
+      }
+
+      log.info(`  🛠️  Opening Tools menu...`);
+      await sendProgress?.("Opening Tools menu...", 2, 5);
+
+      // Click the Tools button
+      const toolsButtonSelectors = [
+        'button:has-text("Tools")',
+        'button[aria-label*="Tools"]',
+        'div[role="button"]:has-text("Tools")',
+      ];
+
+      let toolsClicked = false;
+      for (const selector of toolsButtonSelectors) {
+        try {
+          const element = await sessionPage.$(selector);
+          if (element) {
+            await element.click();
+            toolsClicked = true;
+            log.success(`  ✅ Clicked Tools button`);
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+
+      if (!toolsClicked) {
+        throw new Error("Could not find Tools button. The UI may have changed.");
+      }
+
+      // Wait for menu to appear
+      await randomDelay(500, 1000);
+
+      // Click the selected tool option
+      log.info(`  🎯 Selecting tool: ${displayName}...`);
+      await sendProgress?.(`Selecting ${displayName}...`, 3, 5);
+
+      const toolOptionSelectors = [
+        `div[role="menuitem"]:has-text("${displayName}")`,
+        `button:has-text("${displayName}")`,
+        `div[role="option"]:has-text("${displayName}")`,
+      ];
+
+      let toolClicked = false;
+      for (const selector of toolOptionSelectors) {
+        try {
+          const element = await sessionPage.$(selector);
+          if (element) {
+            await element.click();
+            toolClicked = true;
+            log.success(`  ✅ Selected tool: ${displayName}`);
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+
+      if (!toolClicked) {
+        throw new Error(`Could not select tool: ${displayName}`);
+      }
+
+      // Wait for tool interface to load
+      await randomDelay(1000, 2000);
+
+      // Submit the prompt using the ask method
+      log.info(`  📝 Submitting prompt to ${displayName}...`);
+      await sendProgress?.(`Submitting prompt to ${displayName}...`, 4, 5);
+
+      const result = await session.ask(prompt, sendProgress);
+
+      log.success(`✅ [TOOL] use_gemini_tool completed`);
+      await sendProgress?.("Tool execution complete!", 5, 5);
+
+      return {
+        success: true,
+        data: {
+          status: "success",
+          tool: displayName,
+          result: result.trimEnd(),
+          session_id: session.sessionId,
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log.error(`❌ [TOOL] use_gemini_tool failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,

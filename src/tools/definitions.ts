@@ -13,6 +13,8 @@ import {
 import { conversationManagementTools } from "./definitions/conversation-management.js";
 import { sessionManagementTools } from "./definitions/session-management.js";
 import { systemTools } from "./definitions/system.js";
+import { selectModelTool } from "./definitions/model-selection.js";
+import { useGeminiToolTool } from "./definitions/gemini-tools.js";
 
 /**
  * Build Tool Definitions with ConversationLibrary context
@@ -26,6 +28,8 @@ export function buildToolDefinitions(library: ConversationLibrary): Tool[] {
 
   return [
     dynamicAskQuestionTool,
+    selectModelTool,
+    useGeminiToolTool,
     ...conversationManagementTools,
     ...sessionManagementTools,
     ...systemTools,

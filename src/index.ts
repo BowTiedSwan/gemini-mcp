@@ -168,6 +168,26 @@ class GeminiMCPServer {
             );
             break;
 
+          case "select_model":
+            result = await this.toolHandlers.handleSelectModel(
+              args as {
+                model: string;
+                session_id?: string;
+              }
+            );
+            break;
+
+          case "use_gemini_tool":
+            result = await this.toolHandlers.handleUseGeminiTool(
+              args as {
+                tool: string;
+                prompt: string;
+                session_id?: string;
+              },
+              sendProgress
+            );
+            break;
+
           case "add_conversation":
             result = await this.toolHandlers.handleAddConversation(
               args as {
