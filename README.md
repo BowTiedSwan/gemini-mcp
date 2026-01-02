@@ -33,7 +33,7 @@ This MCP server enables your local AI agents (Claude Code, Cursor, etc.) to inte
 ### Claude Code
 
 ```bash
-claude mcp add gemini npx gemini-mcp@latest
+claude mcp add gemini npx gemini-app-mcp@latest
 ```
 
 ### Cursor
@@ -45,7 +45,7 @@ Add to `~/.cursor/mcp.json`:
   "mcpServers": {
     "gemini": {
       "command": "npx",
-      "args": ["-y", "gemini-mcp@latest"]
+      "args": ["-y", "gemini-app-mcp@latest"]
     }
   }
 }

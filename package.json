@@ -1,5 +1,5 @@
 {
-  "name": "gemini-mcp",
+  "name": "gemini-app-mcp",
   "version": "1.0.0",
   "description": "MCP server for Google Gemini App with session support and human-like behavior",
   "type": "module",
